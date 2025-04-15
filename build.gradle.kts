@@ -8,12 +8,20 @@ group = "com.passwordmanager"
 version = "0.0.1-SNAPSHOT"
 
 java {
+<<<<<<< HEAD
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 
+=======
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+>>>>>>> new
 repositories {
 	mavenCentral()
 }
