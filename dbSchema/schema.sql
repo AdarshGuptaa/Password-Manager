@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS user_details (
     user_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    creation_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     total_passwords BIGINT
 ) ENGINE=InnoDB;
 
@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS passwords (
     website_id BIGINT,
     website_username VARCHAR(255),
     website_password VARCHAR(255),
-    creation_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user_details(user_id) ON DELETE CASCADE,
     FOREIGN KEY (website_id) REFERENCES websites(website_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
