@@ -19,9 +19,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="user_id")
     private Long id;
-
+    
     @Column(name="email")
-    private String email;
+    private String username;
 
     @Column(name="password")
     private String password;
@@ -30,9 +30,9 @@ public class User {
     @CreatedDate
     private Instant creationDate;
 
-    public User(Long id, String email, String password, Instant creationDate) {
+    public User(Long id, String username, String password, Instant creationDate) {
         this.id = id;
-        this.email = email;
+        this.username = username;
         this.password = password;
         this.creationDate = creationDate;
     }
@@ -43,14 +43,6 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public String getPassword() {
@@ -67,6 +59,14 @@ public class User {
 
     public void setCreationDate(Instant creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
 
