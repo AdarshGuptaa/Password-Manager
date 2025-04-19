@@ -33,11 +33,27 @@ public class User {
     @CreatedDate
     private Instant creationDate;
 
+    @Column(name="total_password")
+    private Long totalPasswords;
+
+    public Long getTotalPasswords() {
+        return totalPasswords;
+    }
+
+    public void setTotalPasswords(Long totalPasswords) {
+        this.totalPasswords = totalPasswords;
+    }
+
+    public User(){
+        
+    }
+
     public User(Long id, String username, String password, Instant creationDate) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.creationDate = creationDate;
+        this.totalPasswords = 0L;
     }
 
     public Long getId() {

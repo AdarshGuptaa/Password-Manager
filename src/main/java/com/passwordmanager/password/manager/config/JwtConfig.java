@@ -21,10 +21,14 @@ import com.passwordmanager.password.manager.jwt.JwtService;
 @Configuration
 @ConfigurationProperties(prefix = "jwt")
 public class JwtConfig {
+
+    @Value("${jwt.private-key}")
     private RSAPrivateKey privateKey;
 
+    @Value("${jwt.public-key}")
     private RSAPublicKey publicKey;
 
+    @Value("${jwt.ttl}")
     private Duration ttl;
 
     @Bean
@@ -43,7 +47,7 @@ public class JwtConfig {
 
     @Bean
     public JwtService jwtService(
-        @Value("${password-manager}") final String appName, 
+        @Value("${spring.application.name}") final String appName, 
         final JwtEncoder jwtEncoder) {
 
         return new JwtService(appName, ttl, jwtEncoder);

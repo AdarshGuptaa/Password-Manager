@@ -15,11 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.passwordmanager.password.manager.dto.LoginDTO;
+import com.passwordmanager.password.manager.exceptionHandlling.UsernameAlreadyTakenException;
 import com.passwordmanager.password.manager.user.User;
 import com.passwordmanager.password.manager.user.UserRepository;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class UserController {
 
     @Autowired
@@ -50,17 +51,16 @@ public class UserController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<String> signup(@RequestBody User user) {
-        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
-        if (existingUser.isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Username already taken");
-        }
-
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
+public ResponseEntity<String> signup(@RequestBody User user) {
+    Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
+    if (existingUser.isPresent()) {
+        throw new UsernameAlreadyTakenException("Username already taken");
     }
 
+    user.setPassword(passwordEncoder.encode(user.getPassword()));
+    userRepository.save(user);
+    return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
+}
     
     
 }
