@@ -5,6 +5,6 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WebsiteRepository extends JpaRepository<Website,Long>{
-    Optional<String> findByName(String websiteName);
-    Optional<String> findByUrl(String websiteURL);
+    Optional<Website> findByName(String websiteName);
+    Optional<Website> findByUrl(String websiteURL);
 }
