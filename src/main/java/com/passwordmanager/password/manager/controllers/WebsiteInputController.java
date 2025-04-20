@@ -2,6 +2,7 @@ package com.passwordmanager.password.manager.controllers;
 
 
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class WebsiteInputController {
     }
 
     @GetMapping("/getall")
-    public ResponseEntity<?> getAllWebsites(){
-        
+    public ResponseEntity<List<Website>> getAllWebsites(){
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(websiteRepository.findAll());
     }
 }
