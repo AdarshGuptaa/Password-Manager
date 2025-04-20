@@ -17,5 +17,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleGeneral(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong");
     }
+
+    @ExceptionHandler(WebsiteUrlAlreadyExistsException.class)
+    public ResponseEntity<String> handleWebsiteAlreadyExists(WebsiteUrlAlreadyExistsException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
+
+
+    @ExceptionHandler(WebsiteUrlConnectionFailed.class)
+    public ResponseEntity<String> handleWebsiteUrlConnectionFail(WebsiteUrlConnectionFailed ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    }
 }
 
