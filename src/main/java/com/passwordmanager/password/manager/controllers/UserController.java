@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.passwordmanager.password.manager.dto.LoginDTO;
 import com.passwordmanager.password.manager.exceptionHandlling.UsernameAlreadyTakenException;
+import com.passwordmanager.password.manager.jwt.JwtService;
 import com.passwordmanager.password.manager.user.User;
 import com.passwordmanager.password.manager.user.UserRepository;
 
@@ -32,35 +32,32 @@ public class UserController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private JwtService jwtService;
+
+    public record LoginDTO(String username, String password){}
+
+    public record loginResponseDTO(String token){}
+
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDTO loginDTO){
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                    loginDTO.getUsername(),
-                    loginDTO.getPassword()
-                )
-            );
-            return ResponseEntity.ok("User logged in successfully");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
+        UsernamePasswordAuthenticationToken authToken = UsernamePasswordAuthenticationToken
+            .unauthenticated(loginDTO.username(), loginDTO.password());
+        Authentication authentication = authenticationManager.authenticate(authToken);
+        String token = jwtService.generateToken(authentication.getName());
+        return ResponseEntity.ok(new loginResponseDTO(token));
+    }
+    
+    @PostMapping("/signup")
+    public ResponseEntity<String> signup(@RequestBody User user) {
+        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
+        if (existingUser.isPresent()) {
+            throw new UsernameAlreadyTakenException("Username already taken");
         }
 
-
-
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
     }
 
-    @PostMapping("/signup")
-public ResponseEntity<String> signup(@RequestBody User user) {
-    Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
-    if (existingUser.isPresent()) {
-        throw new UsernameAlreadyTakenException("Username already taken");
-    }
-
-    user.setPassword(passwordEncoder.encode(user.getPassword()));
-    userRepository.save(user);
-    return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
-}
-    
-    
 }
