@@ -41,11 +41,16 @@ public class WebsiteInputController {
         }
 
         URL siteUrl = new URI(website.getWebsiteURL()).toURL();
+
+
         HttpURLConnection connection = (HttpURLConnection)siteUrl.openConnection();
         int responseCode = connection.getResponseCode();
         if(responseCode >= 300 || responseCode <= 199){
             throw new WebsiteUrlConnectionFailed("Website did not respond in time");
         }
+
+        // System.out.println(siteUrl.getHost());
+
 
         websiteRepository.save(website);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body("Website Added");
