@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.passwordmanager.password.manager.passwords.PasswordDetails;
+import com.passwordmanager.password.manager.passwords.PasswordRepository;
 import com.passwordmanager.password.manager.user.User;
 import com.passwordmanager.password.manager.user.UserRepository;
 import com.passwordmanager.password.manager.website.Website;
@@ -34,6 +35,12 @@ public class PasswordController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private PasswordRepository passwordRepository;
+
+    public record DeletePasswordDTO(Long passwordId){}
+    public record PasswordDTO(Long webisteId, String websiteUsername, String websitePassword){}
+
 
     private User getUser(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -45,24 +52,27 @@ public class PasswordController {
     }
 
     @PostMapping("/addpassword")
-    public ResponseEntity<?> addPassword(@RequestBody PasswordDetails passwordDetailsCreds){
+    public ResponseEntity<?> addPassword(@RequestBody  PasswordDTO passwordDTO){
         User user = getUser();
-        Website website = websiteRepository.findById(passwordDetailsCreds.getWebsite().getWebsiteId())
+        Website website = websiteRepository.findById(passwordDTO.webisteId())
         .orElseThrow(() -> new UsernameNotFoundException("Website Not Found"));
-
         PasswordDetails passwordDetails = new PasswordDetails();
         passwordDetails.setUser(user);
         passwordDetails.setWebsite(website);
-        passwordDetails.setWebsiteUsername(passwordEncoder.encode(passwordDetailsCreds.getWebsiteUsername()));
-        passwordDetails.setWebsitePassword(passwordEncoder.encode(passwordDetailsCreds.getWebsitePassword()));
+        passwordDetails.setWebsiteUsername(passwordEncoder.encode(passwordDTO.websiteUsername()));
+        passwordDetails.setWebsitePassword(passwordEncoder.encode(passwordDTO.websitePassword()));
+        passwordRepository.save(passwordDetails);
 
         return ResponseEntity.status(HttpStatus.OK).body("Password Added Successfully!");
     }
     
 
     @DeleteMapping("/deletepassword")
-    public ResponseEntity<?> deletePassword(){
-        return null;
+    public ResponseEntity<?> deletePassword(@RequestBody deletePasswordDTO deletePasswordDTO){
+        PasswordDetails passwordDetails = passwordRepository.findById(deletePasswordDTO.passwordId())
+        .orElseThrow(()-> new UsernameNotFoundException("Password Does not exist"));
+        passwordRepository.delete(passwordDetails);
+        return ResponseEntity.status(HttpStatus.OK).body("Password Deleted Successfully!");
     }
     
     @GetMapping("/getallpasswords")
