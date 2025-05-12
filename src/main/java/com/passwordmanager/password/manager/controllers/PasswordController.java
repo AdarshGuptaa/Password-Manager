@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,7 +53,7 @@ public class PasswordController {
     @PostMapping("/addpassword")
     public ResponseEntity<?> addPassword(@RequestBody  PasswordDTO passwordDTO) throws Exception{
         User user = getUser();
-        Website website = websiteRepository.findById(passwordDTO.webisteId())
+        Website website = websiteRepository.findById(passwordDTO.website().getWebsiteId())
         .orElseThrow(() -> new UsernameNotFoundException("Website Not Found"));
         PasswordDetails passwordDetails = new PasswordDetails();
         passwordDetails.setUser(user);
