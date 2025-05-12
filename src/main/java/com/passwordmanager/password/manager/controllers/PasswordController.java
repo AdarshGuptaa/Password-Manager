@@ -23,17 +23,12 @@ import com.passwordmanager.password.manager.passwords.PasswordRepository;
 import com.passwordmanager.password.manager.user.User;
 import com.passwordmanager.password.manager.user.UserRepository;
 import com.passwordmanager.password.manager.website.Website;
-import com.passwordmanager.password.manager.website.WebsiteRepository;
-
 @RestController
 @RequestMapping("/passwords")
 public class PasswordController {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private WebsiteRepository websiteRepository;
 
     @Autowired
     private PasswordRepository passwordRepository;
