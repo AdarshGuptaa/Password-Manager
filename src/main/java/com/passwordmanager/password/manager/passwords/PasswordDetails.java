@@ -14,6 +14,7 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -24,15 +25,15 @@ public class PasswordDetails {
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name="password_id")
     private Long passwordId;
 
     @ManyToOne
-    @Column(name="user_id")
+    @JoinColumn(name="user_id")
     private User user;
 
     @ManyToOne
-    @Column(name="website_id")
+    @JoinColumn(name="website_id")
     private Website website;
     
     @Column(name="website_username")
@@ -48,6 +49,10 @@ public class PasswordDetails {
     @CreatedDate
     @Column(name="updated_at")
     private Instant updateDate;
+
+    public PasswordDetails(){
+
+    }
 
     public Long getPasswordId() {
         return passwordId;

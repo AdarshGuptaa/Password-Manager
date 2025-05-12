@@ -28,6 +28,10 @@ public class Website {
         this.websiteURL = websiteURL;
     }
 
+    public Website(){
+        
+    }
+
     public Long getWebsiteId() {
         return websiteId;
     }

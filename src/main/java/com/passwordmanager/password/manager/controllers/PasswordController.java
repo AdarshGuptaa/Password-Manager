@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.passwordmanager.password.manager.passwords.AESEncrypter;
 import com.passwordmanager.password.manager.passwords.PasswordDetails;
 import com.passwordmanager.password.manager.passwords.PasswordRepository;
 import com.passwordmanager.password.manager.user.User;
@@ -38,7 +39,8 @@ public class PasswordController {
     private PasswordRepository passwordRepository;
 
     public record DeletePasswordDTO(Long passwordId){}
-    public record PasswordDTO(Website website, String websiteUsername, String websitePassword){}
+    public record PasswordDTO(Long passwordId, Website website, String websiteUsername, String websitePassword){}
+
 
 
     private User getUser(){
@@ -53,11 +55,9 @@ public class PasswordController {
     @PostMapping("/addpassword")
     public ResponseEntity<?> addPassword(@RequestBody  PasswordDTO passwordDTO) throws Exception{
         User user = getUser();
-        Website website = websiteRepository.findById(passwordDTO.website().getWebsiteId())
-        .orElseThrow(() -> new UsernameNotFoundException("Website Not Found"));
         PasswordDetails passwordDetails = new PasswordDetails();
         passwordDetails.setUser(user);
-        passwordDetails.setWebsite(website);
+        passwordDetails.setWebsite(passwordDTO.website());
         passwordDetails.setWebsiteUsername(passwordDTO.websiteUsername());
         passwordDetails.setWebsitePassword(com.passwordmanager.password.manager.passwords.AESEncrypter.encrypt(user.getPassword(), passwordDTO.websitePassword()));
         passwordRepository.save(passwordDetails);
@@ -78,16 +78,33 @@ public class PasswordController {
         User user = getUser();
         List<PasswordDetails> encryptedUserPasswords = passwordRepository.findAllByUser(user)
         .orElseThrow(() -> new UsernameNotFoundException("Passwords couldn't be found!"));
+        for(PasswordDetails p : encryptedUserPasswords){
+            System.out.println(p);
+        }
         List<PasswordDTO> decryptedUserPasswordList= new ArrayList<>();
         for(PasswordDetails encryptedPassword : encryptedUserPasswords){
-            decryptedUserPasswordList.add(new PasswordDTO(encryptedPassword.getWebsite(), encryptedPassword.getWebsiteUsername()
+            decryptedUserPasswordList.add(new PasswordDTO(
+            encryptedPassword.getPasswordId()
+            ,encryptedPassword.getWebsite()
+            , encryptedPassword.getWebsiteUsername()
             ,com.passwordmanager.password.manager.passwords.AESEncrypter.decrypt(user.getPassword(), encryptedPassword.getWebsitePassword())));
         }
         return ResponseEntity.status(HttpStatus.OK).body(decryptedUserPasswordList);
     }
 
-    @PutMapping("/updatemapping")
-    public ResponseEntity<?> updatePassword(){
-        return null;
+    @PutMapping("/updatepassword")
+    public ResponseEntity<?> updatePassword(@RequestBody PasswordDTO passwordDTO) throws Exception{
+        User user = getUser();
+        PasswordDetails passwordDetails =   passwordRepository.findById(passwordDTO.passwordId())
+                                            .orElseThrow(() -> new UsernameNotFoundException("User Not Found"));
+
+        passwordDetails.setWebsite(passwordDTO.website());
+        passwordDetails.setWebsiteUsername(passwordDTO.websiteUsername());
+        passwordDetails.setWebsitePassword(AESEncrypter.encrypt(user.getPassword(), passwordDTO.websitePassword()));
+        passwordRepository.save(passwordDetails);
+
+        return ResponseEntity.status(HttpStatus.OK).body("Password Updated");
     }
+
+
 }

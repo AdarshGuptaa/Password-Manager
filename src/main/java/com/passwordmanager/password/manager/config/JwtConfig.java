@@ -52,4 +52,6 @@ public class JwtConfig {
 
         return new JwtService(appName, ttl, jwtEncoder);
     }
+
+    
 }

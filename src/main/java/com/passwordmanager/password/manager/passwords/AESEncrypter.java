@@ -1,55 +1,66 @@
 package com.passwordmanager.password.manager.passwords;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-
-import io.jsonwebtoken.security.InvalidKeyException;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class AESEncrypter {
-    public static SecretKey generateKey(int n) throws NoSuchAlgorithmException {
-        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-        keyGenerator.init(n);
-        SecretKey key = keyGenerator.generateKey();
-        return key;
+    private static final String ALGORITHM = "AES";
+    private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
+    private static final String KEY_DERIVATION_ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final int KEY_LENGTH = 256;
+    private static final int ITERATION_COUNT = 65536;
+    private static final int SALT_LENGTH = 16;
+    private static final int IV_LENGTH = 16;
+    
+    public static String encrypt(String password, String data) throws Exception {
+        byte[] salt = generateSalt();
+        SecretKey secretKey = generateKeyFromPassword(password, salt);
+        byte[] iv = generateIv();
+        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
+        byte[] encryptedData = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(salt) + ":" + Base64.getEncoder().encodeToString(iv) + ":" + Base64.getEncoder().encodeToString(encryptedData);
     }
 
-    public static GCMParameterSpec generateIv() {
-        byte[] iv = new byte[12];
-        new SecureRandom().nextBytes(iv);
-        return new GCMParameterSpec(128, iv);
+    public static String decrypt(String password, String encryptedData) throws Exception {
+        String[] parts = encryptedData.split(":");
+        byte[] salt = Base64.getDecoder().decode(parts[0]);
+        byte[] iv = Base64.getDecoder().decode(parts[1]);
+        byte[] data = Base64.getDecoder().decode(parts[2]);
+        SecretKey secretKey = generateKeyFromPassword(password, salt);
+        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+        byte[] decryptedData = cipher.doFinal(data);
+        return new String(decryptedData, StandardCharsets.UTF_8);
     }
 
-    public static String encrypt(String algorithm, String input, SecretKey key,
-            GCMParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException, InvalidKeyException,
-            BadPaddingException, IllegalBlockSizeException, java.security.InvalidKeyException {
-
-        Cipher cipher = Cipher.getInstance(algorithm);
-        cipher.init(Cipher.ENCRYPT_MODE, key, iv);
-        byte[] cipherText = cipher.doFinal(input.getBytes());
-        return Base64.getEncoder()
-                .encodeToString(cipherText);
+    private static SecretKey generateKeyFromPassword(String password, byte[] salt) throws Exception {
+        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
+        SecretKeyFactory factory = SecretKeyFactory.getInstance(KEY_DERIVATION_ALGORITHM);
+        byte[] keyBytes = factory.generateSecret(spec).getEncoded();
+        return new SecretKeySpec(keyBytes, ALGORITHM);
     }
 
-    public static String decrypt(String algorithm, String cipherText, SecretKey key,
-            GCMParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException,
-            InvalidAlgorithmParameterException, InvalidKeyException,
-            BadPaddingException, IllegalBlockSizeException, java.security.InvalidKeyException {
-
-        Cipher cipher = Cipher.getInstance(algorithm);
-        cipher.init(Cipher.DECRYPT_MODE, key, iv);
-        byte[] plainText = cipher.doFinal(Base64.getDecoder()
-                .decode(cipherText));
-        return new String(plainText);
+    private static byte[] generateSalt() {
+        SecureRandom random = new SecureRandom();
+        byte[] salt = new byte[SALT_LENGTH];
+        random.nextBytes(salt);
+        return salt;
     }
+
+    private static byte[] generateIv() {
+        SecureRandom random = new SecureRandom();
+        byte[] iv = new byte[IV_LENGTH];
+        random.nextBytes(iv);
+        return iv;
+    }
+
 }
