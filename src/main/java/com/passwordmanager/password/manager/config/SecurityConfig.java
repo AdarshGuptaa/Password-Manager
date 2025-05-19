@@ -48,10 +48,20 @@ public class SecurityConfig{
             .csrf(csrf -> csrf.disable())
             
             .authorizeHttpRequests(auth -> auth
-                .dispatcherTypeMatchers( DispatcherType.ERROR ).permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .anyRequest().authenticated()
-            )
+    .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+    .requestMatchers(
+        "/", 
+        "/index.html", 
+        "/favicon.ico",
+        "/*.js", 
+        "/*.css", 
+        "/static/**", 
+        "/assets/**", 
+        "/manifest.json"
+    ).permitAll()
+    .requestMatchers("/api/auth/**").permitAll()
+    .anyRequest().authenticated()
+)
             .sessionManagement(session -> 
               session.sessionCreationPolicy(STATELESS))
           .oauth2ResourceServer(server -> server

@@ -1,5 +1,6 @@
 package com.passwordmanager.password.manager.controllers;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,7 @@ import com.passwordmanager.password.manager.passwords.PasswordRepository;
 import com.passwordmanager.password.manager.user.User;
 import com.passwordmanager.password.manager.user.UserRepository;
 import com.passwordmanager.password.manager.website.Website;
+import com.passwordmanager.password.manager.website.WebsiteRepository;
 @RestController
 @RequestMapping("/passwords")
 public class PasswordController {
@@ -33,8 +35,11 @@ public class PasswordController {
     @Autowired
     private PasswordRepository passwordRepository;
 
+    @Autowired
+    private WebsiteRepository websiteRepository;
+
     public record DeletePasswordDTO(Long passwordId){}
-    public record PasswordDTO(Long passwordId, Website website, String websiteUsername, String websitePassword){}
+    public record PasswordDTO(Long passwordId, Long websiteId, String websiteUsername, String websitePassword){}
 
 
 
@@ -51,14 +56,15 @@ public class PasswordController {
     public ResponseEntity<?> addPassword(@RequestBody  PasswordDTO passwordDTO) throws Exception{
         User user = getUser();
         PasswordDetails passwordDetails = new PasswordDetails();
+        Website website = websiteRepository.findById(passwordDTO.websiteId()).orElseThrow(() -> new UsernameNotFoundException("Website Not Found"));
         passwordDetails.setUser(user);
-        passwordDetails.setWebsite(passwordDTO.website());
+        passwordDetails.setWebsite(website);
         passwordDetails.setWebsiteUsername(passwordDTO.websiteUsername());
         passwordDetails.setWebsitePassword(com.passwordmanager.password.manager.passwords.AESEncrypter.encrypt(user.getPassword(), passwordDTO.websitePassword()));
         passwordRepository.save(passwordDetails);
         return ResponseEntity.status(HttpStatus.OK).body("Password Added Successfully!");
     }
-    
+
 
     @DeleteMapping("/deletepassword")
     public ResponseEntity<?> deletePassword(@RequestBody DeletePasswordDTO deletePasswordDTO){
@@ -80,7 +86,7 @@ public class PasswordController {
         for(PasswordDetails encryptedPassword : encryptedUserPasswords){
             decryptedUserPasswordList.add(new PasswordDTO(
             encryptedPassword.getPasswordId()
-            ,encryptedPassword.getWebsite()
+            ,encryptedPassword.getWebsite().getWebsiteId()
             , encryptedPassword.getWebsiteUsername()
             ,com.passwordmanager.password.manager.passwords.AESEncrypter.decrypt(user.getPassword(), encryptedPassword.getWebsitePassword())));
         }
@@ -92,12 +98,11 @@ public class PasswordController {
         User user = getUser();
         PasswordDetails passwordDetails =   passwordRepository.findById(passwordDTO.passwordId())
                                             .orElseThrow(() -> new UsernameNotFoundException("User Not Found"));
-
-        passwordDetails.setWebsite(passwordDTO.website());
         passwordDetails.setWebsiteUsername(passwordDTO.websiteUsername());
         passwordDetails.setWebsitePassword(AESEncrypter.encrypt(user.getPassword(), passwordDTO.websitePassword()));
+        passwordDetails.setUpdateDate(Instant.now());
         passwordRepository.save(passwordDetails);
-
+        
         return ResponseEntity.status(HttpStatus.OK).body("Password Updated");
     }
 

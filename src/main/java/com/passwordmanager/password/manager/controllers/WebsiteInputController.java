@@ -1,7 +1,7 @@
 package com.passwordmanager.password.manager.controllers;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -22,6 +22,8 @@ import com.passwordmanager.password.manager.exceptionHandlling.WebsiteUrlConnect
 import com.passwordmanager.password.manager.website.Website;
 import com.passwordmanager.password.manager.website.WebsiteRepository;
 
+import io.jsonwebtoken.io.IOException;
+
 @RestController
 @RequestMapping("/websiteURL")
 public class WebsiteInputController {
@@ -33,33 +35,58 @@ public class WebsiteInputController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> addWebsite(@RequestBody Website website) throws URISyntaxException, IOException{
-        try{
-            Optional<Website> existingWebsite = websiteRepository.findByWebsiteURL(website.getWebsiteURL());
+public ResponseEntity<?> addWebsite(@RequestBody WebsiteInputDTO website) {
+    try {
+        if (website.websiteURL() == null || website.websiteURL().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Website URL is required");
+        }
+        URI siteUri = new URI(website.websiteURL());
+        URL siteUrl = siteUri.toURL();
+        
+        HttpURLConnection connection = (HttpURLConnection) siteUrl.openConnection();
+        int responseCode = connection.getResponseCode();
+        String url = siteUri.getScheme() + "://" + siteUri.getHost();
+
+        Optional<Website> existingWebsite = websiteRepository.findByWebsiteURL(url);
         if (existingWebsite.isPresent()) {
             throw new WebsiteUrlAlreadyExistsException("Website Already Exists");
         }
-
-        URL siteUrl = new URI(website.getWebsiteURL()).toURL();
-
-
-        HttpURLConnection connection = (HttpURLConnection)siteUrl.openConnection();
-        int responseCode = connection.getResponseCode();
-        if(responseCode >= 300 || responseCode <= 199){
+        
+        System.out.println(responseCode);
+        if (responseCode == 403 || responseCode == 401 || (responseCode >= 200 && responseCode < 300 )) {
+        Website web = new Website();
+        String host = siteUri.getHost();    
+        if (host.startsWith("www.")) {
+            host = host.substring(4);
+        }
+        String websiteName = host.split("\\.")[0].substring(0, 1).toUpperCase() + host.split("\\.")[0].substring(1);
+        web.setWebsiteName(websiteName);
+        web.setWebsiteURL(url);
+        websiteRepository.save(web);
+        }
+        else{
             throw new WebsiteUrlConnectionFailed("Website did not respond in time");
         }
-
-        // System.out.println(siteUrl.getHost());
-
-
-        websiteRepository.save(website);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body("Website Added");
     }
-    catch(URISyntaxException | IOException e){
+     catch (URISyntaxException | IOException e) {
+        System.out.println("invalid url");
         return ResponseEntity.status(HttpStatus.CONFLICT).body("Invalid URL");
+    } 
+    catch (WebsiteUrlAlreadyExistsException e) {
+        System.out.println("url exists");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    } catch (WebsiteUrlConnectionFailed e) {
+        System.out.println("failed connection");
+        return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body(e.getMessage());
+    } catch (MalformedURLException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+    } catch (java.io.IOException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
     }
+    
+}
 
-        }
 
     @GetMapping("/getall")
     public ResponseEntity<List<Website>> getAllWebsites() {
