@@ -35,58 +35,57 @@ public class WebsiteInputController {
     }
 
     @PostMapping("/add")
-public ResponseEntity<?> addWebsite(@RequestBody WebsiteInputDTO website) {
-    try {
-        if (website.websiteURL() == null || website.websiteURL().trim().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Website URL is required");
-        }
-        URI siteUri = new URI(website.websiteURL());
-        URL siteUrl = siteUri.toURL();
-        
-        HttpURLConnection connection = (HttpURLConnection) siteUrl.openConnection();
-        int responseCode = connection.getResponseCode();
-        String url = siteUri.getScheme() + "://" + siteUri.getHost();
+    public ResponseEntity<?> addWebsite(@RequestBody WebsiteInputDTO website) {
+        try {
+            if (website.websiteURL() == null || website.websiteURL().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Website URL is required");
+            }
+            URI siteUri = new URI(website.websiteURL());
+            URL siteUrl = siteUri.toURL();
 
-        Optional<Website> existingWebsite = websiteRepository.findByWebsiteURL(url);
-        if (existingWebsite.isPresent()) {
-            throw new WebsiteUrlAlreadyExistsException("Website Already Exists");
-        }
-        
-        System.out.println(responseCode);
-        if (responseCode == 403 || responseCode == 401 || (responseCode >= 200 && responseCode < 300 )) {
-        Website web = new Website();
-        String host = siteUri.getHost();    
-        if (host.startsWith("www.")) {
-            host = host.substring(4);
-        }
-        String websiteName = host.split("\\.")[0].substring(0, 1).toUpperCase() + host.split("\\.")[0].substring(1);
-        web.setWebsiteName(websiteName);
-        web.setWebsiteURL(url);
-        websiteRepository.save(web);
-        }
-        else{
-            throw new WebsiteUrlConnectionFailed("Website did not respond in time");
-        }
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body("Website Added");
-    }
-     catch (URISyntaxException | IOException e) {
-        System.out.println("invalid url");
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("Invalid URL");
-    } 
-    catch (WebsiteUrlAlreadyExistsException e) {
-        System.out.println("url exists");
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-    } catch (WebsiteUrlConnectionFailed e) {
-        System.out.println("failed connection");
-        return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body(e.getMessage());
-    } catch (MalformedURLException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-    } catch (java.io.IOException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-    }
-    
-}
+            HttpURLConnection connection = (HttpURLConnection) siteUrl.openConnection();
+            int responseCode = connection.getResponseCode();
+            String url = siteUri.getScheme() + "://" + siteUri.getHost();
 
+            Optional<Website> existingWebsite = websiteRepository.findByWebsiteURL(url);
+            if (existingWebsite.isPresent()) {
+                throw new WebsiteUrlAlreadyExistsException("Website Already Exists");
+            }
+
+            System.out.println(responseCode);
+            if (responseCode == 403 || responseCode == 401 || (responseCode >= 200 && responseCode < 300)) {
+                Website web = new Website();
+                String host = siteUri.getHost();
+                if (host.startsWith("www.")) {
+                    host = host.substring(4);
+                }
+                String websiteName = host.split("\\.")[0].substring(0, 1).toUpperCase()
+                        + host.split("\\.")[0].substring(1);
+                web.setWebsiteName(websiteName);
+                web.setWebsiteURL(url);
+                websiteRepository.save(web);
+                getAllWebsites();
+            } else {
+                throw new WebsiteUrlConnectionFailed("Website did not respond in time");
+            }
+
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body("Website Added");
+        } catch (URISyntaxException | IOException e) {
+            System.out.println("invalid url");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Invalid URL");
+        } catch (WebsiteUrlAlreadyExistsException e) {
+            System.out.println("url exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (WebsiteUrlConnectionFailed e) {
+            System.out.println("failed connection");
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body(e.getMessage());
+        } catch (MalformedURLException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        } catch (java.io.IOException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        }
+
+    }
 
     @GetMapping("/getall")
     public ResponseEntity<List<Website>> getAllWebsites() {
