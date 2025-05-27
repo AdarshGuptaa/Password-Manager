@@ -8,7 +8,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,37 +43,40 @@ public class SecurityConfig{
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            
-            .authorizeHttpRequests(auth -> auth
-    .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-    .requestMatchers(
-        "/", 
-        "/index.html", 
-        "/favicon.ico",
-        "/*.js", 
-        "/*.css", 
-        "/static/**", 
-        "/assets/**", 
-        "/manifest.json"
-    ).permitAll()
-    .requestMatchers("/api/auth/**").permitAll()
-    .anyRequest().authenticated()
-)
-            .sessionManagement(session -> 
-              session.sessionCreationPolicy(STATELESS))
-          .oauth2ResourceServer(server -> server
-                  .jwt(Customizer.withDefaults())
-                  .authenticationEntryPoint(
-                      new BearerTokenAuthenticationEntryPoint())
-                  .accessDeniedHandler(
-                      new BearerTokenAccessDeniedHandler())
-          );
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+            .requestMatchers(
+                "/", 
+                "/index.html", 
+                "/favicon.ico",
+                "/*.js", 
+                "/*.css", 
+                "/static/**", 
+                "/assets/**", 
+                "/manifest.json",
+                "/yourpasswords", "/addpassword", "/about"
+            ).permitAll()
+            .requestMatchers("/api/auth/**").permitAll()  // allow login/signup without token
+            .anyRequest().authenticated()  // all other requests require auth
+        )
 
-        return http.build();
-    }
+        // Stateless session
+        .sessionManagement(session -> 
+            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
+
+        // OAuth2 Resource Server with JWT validation
+        .oauth2ResourceServer(server -> server
+            .jwt(Customizer.withDefaults())  // use default JWT decoder; customize if needed
+            .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
+            .accessDeniedHandler(new BearerTokenAccessDeniedHandler())
+        );
+
+    return http.build();
+}
 
 
 

@@ -1,7 +1,9 @@
 package com.passwordmanager.password.manager.controllers;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.passwordmanager.password.manager.exceptionHandlling.WebsiteUrlAlreadyExistsException;
 import com.passwordmanager.password.manager.exceptionHandlling.WebsiteUrlConnectionFailed;
 import com.passwordmanager.password.manager.passwords.AESEncrypter;
 import com.passwordmanager.password.manager.passwords.PasswordDetails;
@@ -60,8 +63,8 @@ public class PasswordController {
     }
 
     @PostMapping("/addpassword")
-    public ResponseEntity<?> addPassword(@RequestBody PasswordDTO passwordDTO) throws Exception {
-        User user = getUser();
+    public ResponseEntity<?> addPassword(@RequestBody PasswordDTO passwordDTO) {
+       try{ User user = getUser();
         PasswordDetails passwordDetails = new PasswordDetails();
 
         URI siteUri = new URI(passwordDTO.websiteUrl());
@@ -76,6 +79,7 @@ public class PasswordController {
             passwordDetails.setWebsite(existingWebsite.get());
         } else {
             Website web = new Website();
+            System.out.println(responseCode);
             if (responseCode == 403 || responseCode == 401 || (responseCode >= 200 && responseCode < 300)) {
                 String host = siteUri.getHost();
                 if (host.startsWith("www.")) {
@@ -94,40 +98,70 @@ public class PasswordController {
 
         passwordDetails.setUser(user);
         passwordDetails.setWebsiteUsername(passwordDTO.websiteUsername());
-        passwordDetails.setWebsitePassword(com.passwordmanager.password.manager.passwords.AESEncrypter
-                .encrypt(user.getPassword(), passwordDTO.websitePassword()));
+        try {
+            passwordDetails.setWebsitePassword(com.passwordmanager.password.manager.passwords.AESEncrypter
+                    .encrypt(user.getPassword(), passwordDTO.websitePassword()));
+        } catch (Exception e) {
+            System.out.println("Last error");
+        }
         passwordRepository.save(passwordDetails);
-        user.setTotalPasswords(user.getTotalPasswords() + 1);
-        return ResponseEntity.status(HttpStatus.OK).body("Password Added Successfully!");
-    }
+        if(user.getTotalPasswords() == null){user.setTotalPasswords(1L);}
+        else{user.setTotalPasswords(user.getTotalPasswords() + 1);}
+        return ResponseEntity.status(HttpStatus.OK).body("Password Added Successfully!");}
+        catch (URISyntaxException | IOException e) {
+            System.out.println("invalid url");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Invalid URL");
+        } catch (WebsiteUrlAlreadyExistsException e) {
+            System.out.println("url exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (WebsiteUrlConnectionFailed e) {
+            System.out.println("failed connection");
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body(e.getMessage());
+        }
+        
+}
+    
+    
 
     @DeleteMapping("/deletepassword")
     public ResponseEntity<?> deletePassword(@RequestBody DeletePasswordDTO deletePasswordDTO) {
-        User user = getUser();
+        try{
+            User user = getUser();
         PasswordDetails passwordDetails = passwordRepository.findById(deletePasswordDTO.passwordId())
                 .orElseThrow(() -> new UsernameNotFoundException("Password Does not exist"));
         passwordRepository.delete(passwordDetails);
-        user.setTotalPasswords(user.getTotalPasswords() - 1);
+        if(user.getTotalPasswords() == null){user.setTotalPasswords(0L);}
+        else{user.setTotalPasswords(user.getTotalPasswords() - 1);}
         return ResponseEntity.status(HttpStatus.OK).body("Password Deleted Successfully!");
+        }
+        catch(Exception e){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Password Deleted Successfully!");
+        }
     }
 
     @GetMapping("/getallpasswords")
-    public ResponseEntity<List<PasswordDTO>> getAllPasswords() throws Exception {
+public ResponseEntity<List<PasswordDTO>> getAllPasswords() {
+    try {
         User user = getUser();
         List<PasswordDetails> encryptedUserPasswords = passwordRepository.findAllByUser(user)
-                .orElseThrow(() -> new UsernameNotFoundException("Passwords couldn't be found!"));
-        for (PasswordDetails p : encryptedUserPasswords) {
-            System.out.println(p);
-        }
+            .orElseThrow(() -> new UsernameNotFoundException("Passwords couldn't be found!"));
+
         List<PasswordDTO> decryptedUserPasswordList = new ArrayList<>();
         for (PasswordDetails encryptedPassword : encryptedUserPasswords) {
             decryptedUserPasswordList.add(new PasswordDTO(
-                    encryptedPassword.getPasswordId(), encryptedPassword.getWebsite().getWebsiteURL(),
-                    encryptedPassword.getWebsiteUsername(), com.passwordmanager.password.manager.passwords.AESEncrypter
-                            .decrypt(user.getPassword(), encryptedPassword.getWebsitePassword())));
+                encryptedPassword.getPasswordId(),
+                encryptedPassword.getWebsite().getWebsiteURL(),
+                encryptedPassword.getWebsiteUsername(),
+                AESEncrypter.decrypt(user.getPassword(), encryptedPassword.getWebsitePassword())
+            ));
         }
-        return ResponseEntity.status(HttpStatus.OK).body(decryptedUserPasswordList);
+        return ResponseEntity.ok(decryptedUserPasswordList);
+
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
+}
+    
 
     @PutMapping("/updatepassword")
     public ResponseEntity<?> updatePassword(@RequestBody PasswordDTO passwordDTO) throws Exception {

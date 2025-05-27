@@ -10,5 +10,9 @@ public class FrontEndController {
     public String redirectSingle() {
         return "forward:/index.html";
     }
+    @GetMapping({"/yourpasswords", "/addpassword", "/about"})
+    public String getIndex() {
+        return "forward:/index.html";
+    }
 }
 
