@@ -113,5 +113,5 @@ The hosted app will remain live on AWS until **June 2026**.
 I am a first-year Computer Science student(2025-28) @ABVIIITM Gwalior. 
 This project helped me apply everything I’ve learned about authentication, encryption, REST APIs, deployment, and frontend integration.
 
-📫 [LinkedIn – Adarsh Gupta](https://www.linkedin.com/in/YOUR-LINKEDIN-ID)  
-📁 [GitHub Repo](https://github.com/yourusername/password-manager)
+📫 [LinkedIn – Adarsh Gupta](www.linkedin.com/in/adarsh-gupta-a4ba60322)  
+📁 [GitHub Repo](github.com/AdarshGuptaa/Password-Manager)
