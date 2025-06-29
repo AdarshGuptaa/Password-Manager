@@ -81,6 +81,21 @@ The hosted app will remain live on AWS until **June 2026**.
 
 ---
 
+## 📸 UI Screenshots
+
+### 🔐 Login Page
+---
+![Login Page](/login-page.png)
+---
+### 📋 Your Passwords
+---
+![Your Passwords Page](/your-passwords-page.png)
+### ➕ Add a Password
+---
+![Add Password Page](/add-password-page.png)
+### 🧭 About Page
+---
+![Aout Page](/about-page.png)
 ## 🧠 Security Architecture
 
 - **JWT Authentication** – Secures endpoints and ensures stateless user sessions
