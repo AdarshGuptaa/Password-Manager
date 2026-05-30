@@ -22,7 +22,7 @@ This is **not just another form-and-save project**, nor is it an incomplete prot
 > ⚠️ **Note:** The site is served over **HTTP** (not HTTPS). If it's inaccessible, ensure your browser doesn't force HTTPS.
 
 🕒 **Uptime Guarantee**:  
-The hosted app will remain live on AWS until **June 2026**.
+The hosted app will remain live on AWS until **June 2025**.
 
 ---
 
